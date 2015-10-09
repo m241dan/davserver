@@ -12,6 +12,7 @@ local C = {}
 ---------------------------------------------
 
 local function getClientIP( client )
+   coroutine.yield()
    while client.addr == nil do
       client.addr, client.port, client.net = client.connection:getsockname()
       coroutine.yield()
@@ -34,16 +35,30 @@ function C:new( connect )
    client.connection:settimeout(0) -- don't block, you either have something or you don't!
    client.inbuf = {}
    client.outbuf = {}
+   func = coroutine.wrap( getClientIP )
+   func( self ) -- init the coroutine by passing it self
 
-   -- get the client info in a non-blocking way using an event
-
-   return client;
+   return func, client;
 end
 
 function C:receive()
-   self.inbuf[#self.inbuf + 1] =    
+   local pattern, err = self.connection:receive('*l')
+
+   if( not err ) then
+      self.inbuf[#self.inbuf+1] = pattern
+   elseif( err == "closed" ) then
+      self.connection:close()
+      return false
+   end
+
+   return true
 end
 
 function C:send()
+   local output = table.concat( self.outbuf )
+
+   self.connection:send( output )
+   self.outbuf = {}
+end
 
 return C

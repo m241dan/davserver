@@ -38,10 +38,10 @@ end
 
 function S:accept()
    local connection, err = self.socket:accept()
-   local client
+   local ipthr, client
    if( not err ) then
       if( self.accepting == true ) then
-         client = Client:new( connection )
+         ipthr, client = Client:new( connection )
          self.connections[#self.connections+1] = client
          connection:send( "You have connected..." )
       else
@@ -49,7 +49,7 @@ function S:accept()
          connection:close()
       end
    end
-   return client
+   return ipthr, client
 end	
 
 function S:poll()
