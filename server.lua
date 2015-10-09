@@ -1,46 +1,17 @@
 local socket = require( "socket" )
-local EventQueue = require( "libs/eventqueue" )
-local Client = require( "objects/client" )
+local Client = require( "client" )
+
 local S = {}
 
 ---------------------------------------------
--- Server Coroutines                       --
+-- Server Functions
 -- Written by Daniel R. Koris(aka Davenge) --
 ---------------------------------------------
 
-local function acceptNewConnection( server )
-   while true do
-      local connection, err = server.socket:accept()
-      if( not err ) then
-         if( server.accepting == true ) then
-            local new_client = Client:new( connection )
-            local starting_state = Client.state:new( "login", "behaviours/login" )
-            new_client:addState( starting_state )
-            new_client:setState( starting_state )
-            starting_state:init()
-         else
-            connection:close()
-         end
-      end
-      coroutine.yield( EventQueue.default_tick * 8 ) -- every two second should be fine
-   end
+function acceptNewConnection( server )
 end
 
-local function readFromClients( server )
-   while true do
-      for index, client in ipairs( server.connections ) do
-         local input, err, partial = client.connection:receive( "*l" )
-         if( not err ) then
-            print( input )
-         else
-            if( err == 'closed' ) then
-               table.remove( server.connections, index )
-               client:close()
-            end
-         end
-      end
-      coroutine.yield( EventQueue.default_tick ) -- every quarter of a second to read from clients should be fine, can be adjusted if it feels sluggish
-   end
+function readFromClients( server )
 end
 
 ---------------------------------------------
@@ -61,9 +32,31 @@ function S:new( port )
    server.socket:settimeout(0)
    server.connections = {}
    server.accepting = false
-   server.athread = coroutine.create( acceptNewConnection )
 
    return server;
+end
+
+function S:accept()
+   local connection, err = self.socket:accept()
+   local client
+   if( not err ) then
+      if( self.accepting == true ) then
+         client = Client:new( connection )
+         self.connections[#self.connections+1] = client
+         connection:send( "You have connected..." )
+      else
+         connection:send( "We are not currently accepting connections." )
+         connection:close()
+      end
+   end
+   return client
+end	
+
+function S:poll()
+
+end
+
+function S:push()
 end
 
 function S:start()
