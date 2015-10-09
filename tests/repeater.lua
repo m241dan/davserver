@@ -9,14 +9,15 @@ function process()
          if( input == "shutdown" ) then
             run = false
          else
-            c.outbuf[#c.outbuf+1] = input
+            c.outbuf[#c.outbuf+1] = c.addr .. ": " .. input .. "\n"
+            table.remove( c.inbuf, x )
          end
       end
    end   
 end
 
 function main()
-   local ipthreads = {}
+   local new_connects = {}
 
    server = assert( Server:new( 6500 ) )
    server:start()
@@ -24,20 +25,7 @@ function main()
    run = true
    while( run ) do
       -- accept new connections
-      local ipthread, client = server:accept()
-      if( ipthread ~= nil ) then
-         if( coroutine.status( ipthread ) ~= "dead" ) then
-            ipthreads[#ipthreads+1] = ipthread
-         end
-      end
-
-      -- run any ipthreads
-      for i, thread in pairs( ipthreads ) do
-         if( thread() == "dead" ) then
-            table.remove( iptheads, i )
-         end
-      end
-
+      server:accept()
       -- poll the connections
       if( #server.connections > 0 ) then
          server:poll()

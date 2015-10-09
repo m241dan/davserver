@@ -6,20 +6,6 @@ local C = {}
 ---------------------------------------------
 
 
----------------------------------------------
--- Client Coroutines                       --
--- Written by Daniel R. Koris(aka Davenge) --
----------------------------------------------
-
-local function getClientIP( client )
-   while client.addr == nil do
-      client.addr, client.port, client.net = client.connection:getsockname()
-      if( client.addr == nil ) then
-         coroutine.yield()
-      end
-   end
-end
-
 ----------------------------------------------
 -- Client methods                           --
 -- Written by Daniel R. Koris(aka Davenge)  --
@@ -36,10 +22,8 @@ function C:new( connect )
    client.connection:settimeout(0) -- don't block, you either have something or you don't!
    client.inbuf = {}
    client.outbuf = {}
-   func = coroutine.wrap( getClientIP )
-   func( client ) -- init the wrapped coroutine by passing it self
 
-   return func, client;
+   return client;
 end
 
 function C:receive()
@@ -65,7 +49,7 @@ function C:send()
 end
 
 function C:close()
-   self.connection:send( "You connection is being shut down..." )
+   self.connection:send( "You connection is being shut down...\n" )
    self.connection:close()
 end
 

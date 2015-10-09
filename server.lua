@@ -20,6 +20,7 @@ function S:new( port )
    server.socket:setoption( 'reuseaddr', true )
    server.socket:settimeout(0)
    server.connections = {}
+   server.new_connections = {}
    server.accepting = false
 
    return server;
@@ -27,25 +28,28 @@ end
 
 function S:accept()
    local connection, err = self.socket:accept()
-   local ipthr, client
+   local client
    if( not err ) then
       if( self.accepting == true ) then
-         ipthr, client = Client:new( connection )
-
-         if( not client ) then
-            return
-         end
-         self.connections[#self.connections+1] = client
-         connection:send( "You have connected...\n" )
+         client = Client:new( connection )
+         if( not client ) then return; end
+         self:addClient( client )
       else
          connection:send( "We are not currently accepting connections.\n" )
          connection:close()
       end
    end
-   return ipthr, client
+   return client
 end	
 
 function S:poll()
+   for i, client in ipairs( self.new_connections ) do
+      client.addr, client.port, client.net = client.connection:getsockname()
+      if( client.addr ~= nil ) then
+         table.remove( self.new_connections, i )
+      end
+   end
+
    for i, client in ipairs( self.connections ) do
       if( client:receive() == false ) then
          table.remove( self.connections, i )
@@ -67,12 +71,19 @@ function S:stop()
    self.accepting = false
 end
 
+function S:addClient( client )
+   self.connections[#self.connections+1] = client
+   self.new_connections[#self.new_connections+1] = client
+   client.connection:send( "You have connected...\n" )
+end
+
 function S:close()
    for i, client in ipairs( self.connections ) do
       client:close()
    end
    self.socket:close()
    self.connections = {}
+   self.new_connections = {}
 end
 
 return S
