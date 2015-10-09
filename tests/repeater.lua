@@ -18,31 +18,34 @@ end
 function main()
    local ipthreads = {}
 
-   server = Server:new( 6500 )
+   server = assert( Server:new( 6500 ) )
+   server:start()
 
    run = true
    while( run ) do
       -- accept new connections
       local ipthread, client = server:accept()
       if( ipthread ~= nil ) then
-         ipthreads[#ipthreads+1] = ipthread
+         if( coroutine.status( ipthread ) ~= "dead" ) then
+            ipthreads[#ipthreads+1] = ipthread
+         end
       end
 
       -- run any ipthreads
-      for i, thread in pairs( iptheads ) do
+      for i, thread in pairs( ipthreads ) do
          if( thread() == "dead" ) then
             table.remove( iptheads, i )
          end
       end
 
       -- poll the connections
-      if( #self.connections > 0 then
+      if( #server.connections > 0 ) then
          server:poll()
          process()
          server:push()
       end
    end
-
+   server:stop()
    server:close()
 end
 

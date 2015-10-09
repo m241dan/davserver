@@ -31,10 +31,14 @@ function S:accept()
    if( not err ) then
       if( self.accepting == true ) then
          ipthr, client = Client:new( connection )
+
+         if( not client ) then
+            return
+         end
          self.connections[#self.connections+1] = client
-         connection:send( "You have connected..." )
+         connection:send( "You have connected...\n" )
       else
-         connection:send( "We are not currently accepting connections." )
+         connection:send( "We are not currently accepting connections.\n" )
          connection:close()
       end
    end

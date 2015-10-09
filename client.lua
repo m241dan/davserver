@@ -37,7 +37,7 @@ function C:new( connect )
    client.inbuf = {}
    client.outbuf = {}
    func = coroutine.wrap( getClientIP )
-   func( self ) -- init the wrapped coroutine by passing it self
+   func( client ) -- init the wrapped coroutine by passing it self
 
    return func, client;
 end
