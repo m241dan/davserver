@@ -12,10 +12,11 @@ local C = {}
 ---------------------------------------------
 
 local function getClientIP( client )
-   coroutine.yield()
    while client.addr == nil do
       client.addr, client.port, client.net = client.connection:getsockname()
-      coroutine.yield()
+      if( client.addr == nil ) then
+         coroutine.yield()
+      end
    end
 end
 
@@ -36,7 +37,7 @@ function C:new( connect )
    client.inbuf = {}
    client.outbuf = {}
    func = coroutine.wrap( getClientIP )
-   func( self ) -- init the coroutine by passing it self
+   func( self ) -- init the wrapped coroutine by passing it self
 
    return func, client;
 end
@@ -57,8 +58,15 @@ end
 function C:send()
    local output = table.concat( self.outbuf )
 
-   self.connection:send( output )
-   self.outbuf = {}
+   if( #output > 0 ) then
+      self.connection:send( output )
+      self.outbuf = {}
+   end
+end
+
+function C:close()
+   self.connection:send( "You connection is being shut down..." )
+   self.connection:close()
 end
 
 return C

@@ -4,17 +4,6 @@ local Client = require( "client" )
 local S = {}
 
 ---------------------------------------------
--- Server Functions
--- Written by Daniel R. Koris(aka Davenge) --
----------------------------------------------
-
-function acceptNewConnection( server )
-end
-
-function readFromClients( server )
-end
-
----------------------------------------------
 -- Server Methods                          --
 -- Written by Daniel R. Koris(aka Davenge) --
 ---------------------------------------------
@@ -53,19 +42,34 @@ function S:accept()
 end	
 
 function S:poll()
-
+   for i, client in ipairs( self.connections ) do
+      if( client:receive() == false ) then
+         table.remove( self.connections, i )
+      end
+   end
 end
 
 function S:push()
+   for _, client in ipairs( self.connections ) do
+      client:send()
+   end
 end
 
 function S:start()
    self.accepting = true
-   return self.athread
 end
 
 function S:stop()
    self.accepting = false
 end
 
+function S:close()
+   for i, client in ipairs( self.connections ) do
+      client:close()
+   end
+   self.socket:close()
+   self.connections = {}
+end
+
 return S
+
