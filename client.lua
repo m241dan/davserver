@@ -49,7 +49,7 @@ function C:send()
 end
 
 function C:close()
-   self.connection:send( "You connection is being shut down...\n" )
+   self.connection:send( "Your connection is being shut down...byebye\n" )
    self.connection:close()
 end
 
